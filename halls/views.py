@@ -2,10 +2,10 @@ from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from django.views import generic
 from django.contrib.auth.forms import UserCreationForm
-
 from django.contrib.auth import login,logout , authenticate
 from .models import Hall
-# Create your views here.
+from .forms import VideoForm
+
 def home(request):
     return render(request,'halls/home.html')
 def dashboard(request):
@@ -14,6 +14,13 @@ def dashboard(request):
 def logoutuser(request):
     logout(request)
     return redirect('home')  # Redirect to home if the request method is not POST
+
+  
+def add_video(request,pk):
+    form = VideoForm()
+    
+    return render(request,'halls/add_video.html',{'form':form})
+
 
 class SignUp(generic.CreateView):
     form_class = UserCreationForm
