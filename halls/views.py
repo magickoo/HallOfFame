@@ -2,12 +2,13 @@ from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from django.views import generic
 from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth import login,logout , authenticate
+from django.contrib.auth import authenticate, login
 from .models import Hall, Video
 from .forms import VideoForm, SearchForm
-from django.forms import formset_factory
-from django.http import Http404
+from django.http import Http404, JsonResponse
 from django.forms.utils import ErrorList
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 import urllib
 import requests
 
@@ -18,16 +19,13 @@ def home(request):
 def dashboard(request):
     return render(request,'halls/dashboard.html')
 
-def logoutuser(request):
-    logout(request)
-    return redirect('home')  # Redirect to home if the request method is not POST
 
   
 def add_video(request,pk):
     
     form = VideoForm()
     search_form = SearchForm()
-    hall =  Hall.objects.get(pk = pk)
+    hall =  Hall.objects.get(pk=pk)
     if not hall.user == request.user:
         raise Http404
     if request.method == 'POST':
@@ -41,15 +39,22 @@ def add_video(request,pk):
             video_id = urllib.parse.parse_qs(parsed_url.query).get('v')
             if video_id: 
                 video.youtube_id = video_id[0]
-                response = requests.get(f'https://youtube.googleapis.com/youtube/v3/commentThreads?part=snippet&id={ video_id[0] }&key=[YOUTUBE_API_KEY]')
+                response = requests.get(f'https://www.googleapis.com/youtube/v3/videos?part=snippet&id={ video_id[0] }&key={ YOUTUBE_API_KEY }')
                 json = response.json()
                 title = json['items'][0]['snippet']['title']
                 print(title)
                 video.title = title
                 video.save()
+                return redirect('detail_hall',pk)
                 
-                #video.title = 
-                #video.save() #will put it into database
+            else:
+                if form._errors is None:
+                    form._errors = {}
+
+                # Add the error message
+                errors = form._errors.setdefault('url', ErrorList())
+                errors.append('Needs to be a YouTube URL')
+                
     
     return render(request,'halls/add_video.html',{'form':form , 'search_form': search_form})
 
@@ -97,7 +102,6 @@ class UpdateHall(generic.UpdateView):
     template_name = 'halls/update_hall.html'
     fields = ['title']
     success_url = reverse_lazy('dashboard')
-    
     
 class DeleteHall(generic.DeleteView):
     model = Hall
