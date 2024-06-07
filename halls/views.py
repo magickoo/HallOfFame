@@ -12,15 +12,12 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 import urllib
 import requests
 
-
 YOUTUBE_API_KEY = 'AIzaSyBIKzmId4r-ClE4t-lpqts8n0lUxeAWWJU'
 def home(request):
     return render(request,'halls/home.html')
 def dashboard(request):
     return render(request,'halls/dashboard.html')
 
-
-  
 def add_video(request,pk):
     
     form = VideoForm()
@@ -30,11 +27,11 @@ def add_video(request,pk):
         raise Http404
     if request.method == 'POST':
         #create
-        filled_form = VideoForm(request.POST)
-        if filled_form.is_valid():
+        form = VideoForm(request.POST)
+        if form.is_valid():
             video = Video()
             video.hall = hall
-            video.url = filled_form.cleaned_data['url']
+            video.url = form.cleaned_data['url']
             parsed_url =urllib.parse.urlparse(video.url)
             video_id = urllib.parse.parse_qs(parsed_url.query).get('v')
             if video_id: 
@@ -56,8 +53,15 @@ def add_video(request,pk):
                 errors.append('Needs to be a YouTube URL')
                 
     
-    return render(request,'halls/add_video.html',{'form':form , 'search_form': search_form})
+    return render(request,'halls/add_video.html',{'form':form , 'search_form': search_form,'hall':hall})
 
+def video_search(request):
+    search_form = SearchForm(request.GET)
+    if search_form.is_valid():
+        encoded_search_term = urllib.parse.quote(search_form.cleaned_data['search_term'])
+        response = requests.get(f'https://youtube.googleapis.com/youtube/v3/search?part=snippet&maxResults=6&q={ encoded_search_term }&key={ YOUTUBE_API_KEY }')
+        return JsonResponse(response.json())
+    return JsonResponse({'error':'Not Able to Validate form'})
 
 class SignUp(generic.CreateView):
     form_class = UserCreationForm
