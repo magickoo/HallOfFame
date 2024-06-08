@@ -14,7 +14,9 @@ import requests
 
 YOUTUBE_API_KEY = 'AIzaSyBIKzmId4r-ClE4t-lpqts8n0lUxeAWWJU'
 def home(request):
-    return render(request,'halls/home.html')
+    recent_halls = Hall.objects.all().order_by('-id')[:3]
+    popular_halls = [Hall.objects.get(pk=1),Hall.objects.get(pk=2),Hall.objects.get(pk=3)]
+    return render(request,'halls/home.html',{'recent_halls':recent_halls, 'popular_halls':popular_halls})
 def dashboard(request):
     hall = Hall.objects.filter(user= request.user)
     return render(request,'halls/dashboard.html',{'halls':hall })
@@ -101,7 +103,7 @@ class CreateHall(generic.CreateView):
     def form_valid(self,form):
         form.instance.user = self.request.user
         super(CreateHall,self).form_valid(form)
-        return redirect('home')
+        return redirect('dashboard')
 
 class DetailHall(generic.DetailView):
     model = Hall
