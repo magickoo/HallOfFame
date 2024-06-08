@@ -16,7 +16,8 @@ YOUTUBE_API_KEY = 'AIzaSyBIKzmId4r-ClE4t-lpqts8n0lUxeAWWJU'
 def home(request):
     return render(request,'halls/home.html')
 def dashboard(request):
-    return render(request,'halls/dashboard.html')
+    hall = Hall.objects.filter(user= request.user)
+    return render(request,'halls/dashboard.html',{'halls':hall })
 
 def add_video(request,pk):
     
